@@ -1,0 +1,1 @@
+{"version":3,"file":"projectTools.d.ts","sourceRoot":"","sources":["../../src/tools/projectTools.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AAEzE,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,+BAA+B,CAAC;AACpE,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,4BAA4B,CAAC;AAE9D,wBAAgB,oBAAoB,CAClC,MAAM,EAAE,SAAS,EACjB,cAAc,EAAE,cAAc,EAC9B,WAAW,EAAE,WAAW,GACvB,IAAI,CAqON"}
