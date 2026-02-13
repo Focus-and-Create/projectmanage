@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo Mini Service</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f3f6fb;
+        --panel: #ffffff;
+        --text: #1e2630;
+        --muted: #677483;
+        --line: #d5dce5;
+        --brand: #2f6feb;
+        --ok: #1f9d55;
+        --danger: #c0392b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --panel: #161b22;
+          --text: #e6edf3;
+          --muted: #9ba7b4;
+          --line: #30363d;
+          --brand: #58a6ff;
+          --ok: #3fb950;
+          --danger: #ff7b72;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px;
+      }
+      h1 { margin: 0 0 6px; font-size: clamp(1.4rem, 4vw, 2rem); }
+      .sub { margin: 0 0 16px; color: var(--muted); }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      input, select, button {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        background: transparent;
+        color: inherit;
+      }
+      input[type="text"] { flex: 1; min-width: 220px; }
+      button { cursor: pointer; }
+      button.primary { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+      .toolbar { justify-content: space-between; margin: 14px 0 8px; }
+      .meta { font-size: 13px; color: var(--muted); }
+      ul { list-style: none; padding: 0; margin: 12px 0 0; }
+      li {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .todo-main { display: flex; align-items: center; gap: 10px; }
+      .done { text-decoration: line-through; color: var(--muted); }
+      .pill { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; color: var(--muted); }
+      .danger { color: var(--danger); }
+      .ok { color: var(--ok); }
+      .footer { margin-top: 14px; font-size: 13px; color: var(--muted); }
+      .small { font-size: 12px; color: var(--muted); }
+      .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+      @media (min-width: 860px) { .grid { grid-template-columns: 2fr 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="grid">
+        <section class="card">
+          <h1>📋 Todo Mini Service</h1>
+          <p class="sub">터미널 없이 바로 쓰는 투두 페이지입니다. 기본 저장은 브라우저(localStorage)로 동작해요.</p>
+
+          <div class="row">
+            <input id="newTodo" type="text" placeholder="할 일을 입력하세요" />
+            <select id="priority">
+              <option value="high">높음</option>
+              <option value="medium" selected>보통</option>
+              <option value="low">낮음</option>
+            </select>
+            <button id="addBtn" class="primary">추가</button>
+          </div>
+
+          <div class="row toolbar">
+            <div class="row">
+              <select id="filter">
+                <option value="all">전체</option>
+                <option value="open">진행중</option>
+                <option value="done">완료</option>
+              </select>
+              <button id="clearDone">완료 항목 삭제</button>
+            </div>
+            <span id="count" class="meta"></span>
+          </div>
+
+          <ul id="list"></ul>
+        </section>
+
+        <aside class="card">
+          <h2 style="margin:0 0 10px;font-size:1.05rem;">서비스 모드 안내</h2>
+          <p class="small">이 페이지는 정적 GitHub Pages에서도 바로 동작합니다.</p>
+          <p class="small">원하면 API 서버도 붙일 수 있게 확장 가능한 구조로 작성했습니다.</p>
+          <p class="small">저장 위치: <code>localStorage</code></p>
+          <p class="footer">프로젝트 원본 서버 코드는 <a href="./todo-mcp-server/README.md">README</a>를 참고하세요.</p>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const STORAGE_KEY = 'todo-mini-service-v1';
+      const listEl = document.getElementById('list');
+      const countEl = document.getElementById('count');
+      const filterEl = document.getElementById('filter');
+      const newTodoEl = document.getElementById('newTodo');
+      const priorityEl = document.getElementById('priority');
+
+      const read = () => {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+        catch { return []; }
+      };
+      const write = (todos) => localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+
+      let todos = read();
+
+      function render() {
+        const filter = filterEl.value;
+        const filtered = todos.filter((t) => filter === 'all' || (filter === 'done' ? t.done : !t.done));
+
+        listEl.innerHTML = '';
+        filtered.forEach((todo) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div class="todo-main">
+              <input type="checkbox" ${todo.done ? 'checked' : ''} aria-label="toggle" />
+              <span class="${todo.done ? 'done' : ''}">${todo.title}</span>
+              <span class="pill">${todo.priority === 'high' ? '높음' : todo.priority === 'low' ? '낮음' : '보통'}</span>
+            </div>
+            <div class="row">
+              <button class="danger" aria-label="delete">삭제</button>
+            </div>
+          `;
+
+          const [toggle, del] = li.querySelectorAll('button, input[type="checkbox"]');
+          toggle.addEventListener('change', () => {
+            todos = todos.map((t) => t.id === todo.id ? { ...t, done: !t.done } : t);
+            write(todos); render();
+          });
+          del.addEventListener('click', () => {
+            todos = todos.filter((t) => t.id !== todo.id);
+            write(todos); render();
+          });
+          listEl.appendChild(li);
+        });
+
+        const open = todos.filter((t) => !t.done).length;
+        countEl.textContent = `전체 ${todos.length}개 · 진행중 ${open}개`;
+      }
+
+      document.getElementById('addBtn').addEventListener('click', () => {
+        const title = newTodoEl.value.trim();
+        if (!title) return;
+        todos.unshift({ id: crypto.randomUUID(), title, priority: priorityEl.value, done: false });
+        newTodoEl.value = '';
+        write(todos); render();
+      });
+
+      newTodoEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('addBtn').click();
+      });
+
+      filterEl.addEventListener('change', render);
+      document.getElementById('clearDone').addEventListener('click', () => {
+        todos = todos.filter((t) => !t.done);
+        write(todos); render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
