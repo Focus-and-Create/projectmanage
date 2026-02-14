@@ -134,6 +134,17 @@
       const newTodoEl = document.getElementById('newTodo');
       const priorityEl = document.getElementById('priority');
 
+      const escapeHTML = (str) => {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      };
+
+      const generateId = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+        return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      };
+
       const read = () => {
         try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
         catch { return []; }
@@ -152,7 +163,7 @@
           li.innerHTML = `
             <div class="todo-main">
               <input type="checkbox" ${todo.done ? 'checked' : ''} aria-label="toggle" />
-              <span class="${todo.done ? 'done' : ''}">${todo.title}</span>
+              <span class="${todo.done ? 'done' : ''}">${escapeHTML(todo.title)}</span>
               <span class="pill">${todo.priority === 'high' ? '높음' : todo.priority === 'low' ? '낮음' : '보통'}</span>
             </div>
             <div class="row">
@@ -179,7 +190,7 @@
       document.getElementById('addBtn').addEventListener('click', () => {
         const title = newTodoEl.value.trim();
         if (!title) return;
-        todos.unshift({ id: crypto.randomUUID(), title, priority: priorityEl.value, done: false });
+        todos.unshift({ id: generateId(), title, priority: priorityEl.value, done: false });
         newTodoEl.value = '';
         write(todos); render();
       });
